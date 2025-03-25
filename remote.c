@@ -44,7 +44,25 @@ int discordhook(const char* log) {
         return 1;
     }
 
-    printf("Webhook sent successfully!\n");
+    // Query the response code
+    DWORD statusCode = 0;
+    DWORD statusSize = sizeof(statusCode);
+    if (!HttpQueryInfoA(hRequest, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER, &statusCode, &statusSize, NULL)) {
+        printf("HttpQueryInfoA Error: %ld\n", GetLastError());
+    } else {
+        printf("HTTP Status Code: %ld\n", statusCode);
+    }
+
+    // Optionally, get and print the response body (for debugging)
+    char response[1024] = {0};
+    DWORD bytesRead;
+    if (InternetReadFile(hRequest, response, sizeof(response) - 1, &bytesRead)) {
+        response[bytesRead] = '\0';  // Null-terminate the response
+        printf("Response: %s\n", response);
+    } else {
+        printf("InternetReadFile Error: %ld\n", GetLastError());
+    }
+
     InternetCloseHandle(hRequest);
     InternetCloseHandle(hConnect);
     InternetCloseHandle(hInternet);
