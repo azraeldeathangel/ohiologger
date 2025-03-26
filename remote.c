@@ -40,7 +40,7 @@ int sendtowebhook(const char* log) {
     HINTERNET hRequest = HttpOpenRequestW(
         hConnect, 
         L"POST", 
-        L"/api/webhooks/1354552015124037935/fNh0zz10zIkWPlE0mG-6kOBtfdS7_uhqwfXrFylLmQr5YIf3BYNGSpOgKb6LuY7sWU8E", 
+        L"/api/webhooks/<WEBHOOK-URL>", 
         NULL, 
         NULL, 
         NULL, 
